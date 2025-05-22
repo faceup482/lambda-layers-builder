@@ -1,44 +1,34 @@
-name: Build Pillow Layer ARM64
+name: Build Pillow Layer Python 3.12
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.13
+      - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: '3.12'
       
-      - name: Create pillow layer for ARM64
+      - name: Create pillow layer
         run: |
-          # Create layer structure
           mkdir python
+          pip install --upgrade pip
+          pip install pillow -t python/
           
-          # Install Pillow for ARM64 architecture specifically
-          pip install pillow \
-            --platform linux_aarch64 \
-            --implementation cp \
-            --python-version 3.13 \
-            --only-binary=:all: \
-            --target python/ \
-            --no-cache-dir
-          
-          # Verify contents
-          echo "=== Layer directory contents ==="
-          ls -la python/
-          echo "=== Pillow directory contents ==="
+          echo "=== PIL directory contents ==="
           ls python/PIL/ | head -10
           
-          # Create zip with correct structure
-          zip -r pillow-layer.zip python/
+          echo "=== Looking for _imaging files ==="
+          find python/ -name "*imaging*" -type f
           
-          # Verify zip structure
-          echo "=== Zip contents ==="
-          unzip -l pillow-layer.zip | head -10
+          echo "=== Testing PIL import ==="
+          cd python && python -c "from PIL import Image, ImageOps; print('PIL imported successfully')" && cd ..
+          
+          zip -r pillow-layer-py312.zip python/
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pillow-layer-py313-arm64
-          path: pillow-layer.zip
+          name: pillow-layer-py312
+          path: pillow-layer-py312.zip
