@@ -1,27 +1,38 @@
 name: Build Replicate Layer ARM64
-on: 
-  workflow_dispatch:
-  push:
-    branches: [ main ]
+on: workflow_dispatch
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
       - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
           python-version: '3.13'
       
-      - name: Create replicate layer
+      - name: Create replicate layer for ARM64
         run: |
           mkdir python
-          pip install replicate -t python/
+          
+          # Install for ARM64 architecture specifically
+          pip install replicate \
+            --platform linux_aarch64 \
+            --implementation cp \
+            --python-version 3.13 \
+            --only-binary=:all: \
+            --target python/ \
+            --no-cache-dir
+          
+          # Verify structure
+          echo "=== Layer contents ==="
+          ls -la python/
+          
+          # Create zip
           zip -r replicate-layer-py313-arm64.zip python/
-          ls -la replicate-layer-py313-arm64.zip
+          
+          # Show zip info
+          echo "=== Zip file info ==="
+          unzip -l replicate-layer-py313-arm64.zip | head -20
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
